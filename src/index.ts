@@ -118,7 +118,7 @@ const InstructionSchema = z
 /** Option and level descriptions accept the same JSON structure. */
 const DescriptionSchema = z.union([z.string(), z.record(z.any()), z.array(z.any()), z.null()]);
 
-const UsageSchema = z.object({ input_tokens: z.number(), output_tokens: z.number() });
+const UsageSchema = z.object({ input_tokens: z.number(), output_tokens: z.number(), cost: z.number().optional() });
 const LatencySchema = z.number().describe("Wall-clock milliseconds for the API round trip, for your own calibration logs.");
 const GateSchema = z.enum(["act", "review", "abstain"]);
 
