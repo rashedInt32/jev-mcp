@@ -73,6 +73,24 @@ test("query shorthand sends one check per item and returns verdicts in input ord
   }
 });
 
+test("regression: triage sums cost and drops unknown usage fields", async () => {
+  const mock = await startMock();
+  try {
+    await withClient({ baseUrl: mock.url }, async (client) => {
+      await client.listTools();
+      mock.state.usage = { input_tokens: 10, output_tokens: 2, cost: 0.25, cached_tokens: 7 };
+      const result = await client.callTool({
+        name: "jev_triage",
+        arguments: { query: "q", items: [{ id: "one", text: "a" }, { id: "two", text: "b" }] },
+      });
+      assert.notEqual(result.isError, true);
+      assert.deepEqual(payload(result).usage, { input_tokens: 20, output_tokens: 4, cost: 0.5 });
+    });
+  } finally {
+    await mock.close();
+  }
+});
+
 test("typed questions gate every item like jev_ask does, and report no-match keys", async () => {
   const mock = await startMock();
   try {

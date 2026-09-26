@@ -433,3 +433,32 @@ test("every judgment tool reports the round-trip latency", async () => {
     await mock.close();
   }
 });
+
+test("regression: extra usage fields from the API pass strict output validation", async () => {
+  const mock = await startMock();
+  try {
+    await withClient({ baseUrl: mock.url }, async (client) => {
+      // Listing tools makes the client validate every result against its
+      // output schema, the way strict clients such as Hermes do.
+      await client.listTools();
+      mock.state.usage = { input_tokens: 10, output_tokens: 2, cost: 0.0004, cached_tokens: 7 };
+      const calls = [
+        { name: "jev_check", arguments: { state: "s", question: "q" } },
+        { name: "jev_classify", arguments: { state: "s", question: "q", options: { a: "d", b: "d" } } },
+        { name: "jev_score", arguments: { state: "s", question: "q", levels: ["low", "high"] } },
+        { name: "jev_ask", arguments: { state: "s", questions: [{ id: "x", type: "check", question: "q" }] } },
+      ];
+      for (const call of calls) {
+        const result = await client.callTool(call);
+        assert.notEqual(result.isError, true, call.name);
+        assert.deepEqual(payload(result).usage, { input_tokens: 10, output_tokens: 2, cost: 0.0004 }, `${call.name} passes known fields only`);
+      }
+
+      mock.state.usage = { input_tokens: 10, output_tokens: 2, cost: null };
+      const result = await client.callTool(calls[0]);
+      assert.deepEqual(payload(result).usage, { input_tokens: 10, output_tokens: 2 }, "a non-numeric cost is dropped");
+    });
+  } finally {
+    await mock.close();
+  }
+});

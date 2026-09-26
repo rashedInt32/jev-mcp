@@ -1,6 +1,6 @@
 {
   "name": "jev-mcp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "MCP server exposing TypeSafe Jev typed judgments: classify, score, check, a batched multi-question ask, a many-item triage with server-side file reads, and model discovery.",
   "type": "module",
   "license": "MIT",

@@ -2,7 +2,7 @@
   "name": "jev",
   "displayName": "TypeSafe Jev",
   "description": "Typed, calibrated judgments from TypeSafe Jev: classify, score, check, a batched multi-question ask, a many-item triage with server-side file reads, and model discovery.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": {
     "name": "rashed parvez"
   },
@@ -24,7 +24,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "jev-mcp@0.5.0"
+        "jev-mcp@0.5.1"
       ]
     }
   }

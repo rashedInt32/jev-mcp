@@ -118,7 +118,27 @@ const InstructionSchema = z
 /** Option and level descriptions accept the same JSON structure. */
 const DescriptionSchema = z.union([z.string(), z.record(z.any()), z.array(z.any()), z.null()]);
 
-const UsageSchema = z.object({ input_tokens: z.number(), output_tokens: z.number(), cost: z.number().optional() });
+const UsageSchema = z.object({
+  input_tokens: z.number(),
+  output_tokens: z.number(),
+  cost: z.number().optional(),
+});
+type Usage = z.infer<typeof UsageSchema>;
+
+/**
+ * Copy only the usage fields the output schema declares. The schema forbids
+ * extra keys, so forwarding the API's object as-is would make strict clients
+ * reject every result the day the API adds a field. `cost` is absent from the
+ * SDK's types, so it is read loosely and kept only when it is a number.
+ */
+function pickUsage(usage: { input_tokens: number; output_tokens: number }): Usage {
+  const cost = (usage as { cost?: unknown }).cost;
+  return {
+    input_tokens: usage.input_tokens,
+    output_tokens: usage.output_tokens,
+    ...(typeof cost === "number" ? { cost } : {}),
+  };
+}
 const LatencySchema = z.number().describe("Wall-clock milliseconds for the API round trip, for your own calibration logs.");
 const GateSchema = z.enum(["act", "review", "abstain"]);
 
@@ -288,7 +308,7 @@ server.registerTool(
         action: gateConfidence(answer.confidence, actAbove, reviewAbove),
         thresholds: { act_above: actAbove, review_above: reviewAbove },
         model: result.model,
-        usage: result.usage,
+        usage: pickUsage(result.usage),
         latency_ms,
       });
     } catch (error) {
@@ -354,7 +374,7 @@ server.registerTool(
         action: gateConfidence(answer.confidence, actAbove, reviewAbove),
         thresholds: { act_above: actAbove, review_above: reviewAbove },
         model: result.model,
-        usage: result.usage,
+        usage: pickUsage(result.usage),
         latency_ms,
       });
     } catch (error) {
@@ -414,7 +434,7 @@ server.registerTool(
         verdict: gateProbability(probability, yesAt, noAt),
         thresholds: { yes_at_or_above: yesAt, no_at_or_below: noAt },
         model: result.model,
-        usage: result.usage,
+        usage: pickUsage(result.usage),
         latency_ms,
       });
     } catch (error) {
@@ -458,7 +478,7 @@ server.registerTool(
       const latency_ms = Math.round(performance.now() - started);
 
       const answers = checkAnswerSet(result.answers, expected, gates);
-      return ok({ answers, none_options: noneOptions, model: result.model, usage: result.usage, latency_ms });
+      return ok({ answers, none_options: noneOptions, model: result.model, usage: pickUsage(result.usage), latency_ms });
     } catch (error) {
       return fail(error);
     }
@@ -551,7 +571,7 @@ server.registerTool(
 
       type ItemResult = { id: string; answers?: Record<string, unknown>; latency_ms?: number; error?: DescribedError };
       const results: ItemResult[] = new Array(items.length);
-      const usage = { input_tokens: 0, output_tokens: 0 };
+      const usage: Usage = { input_tokens: 0, output_tokens: 0 };
       let model = MODEL;
       let next = 0;
 
@@ -569,8 +589,10 @@ server.registerTool(
             const result = await client.systemOne({ state: state as EntryType, model: MODEL, questions: built }, { signal: extra.signal });
             const latency_ms = Math.round(performance.now() - started);
             const answers = checkAnswerSet(result.answers, expected, gates);
-            usage.input_tokens += result.usage.input_tokens;
-            usage.output_tokens += result.usage.output_tokens;
+            const itemUsage = pickUsage(result.usage);
+            usage.input_tokens += itemUsage.input_tokens;
+            usage.output_tokens += itemUsage.output_tokens;
+            if (itemUsage.cost !== undefined) usage.cost = (usage.cost ?? 0) + itemUsage.cost;
             model = result.model;
             results[index] = { id: item.id, answers, latency_ms };
           } catch (error) {

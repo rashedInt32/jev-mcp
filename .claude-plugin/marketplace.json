@@ -11,7 +11,7 @@
       "source": "./",
       "displayName": "TypeSafe Jev",
       "description": "Typed, calibrated judgments from TypeSafe Jev: classify, score, check, a batched multi-question ask, a many-item triage with server-side file reads, and model discovery.",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "homepage": "https://github.com/rashedInt32/jev-mcp",
       "repository": "https://github.com/rashedInt32/jev-mcp",
       "license": "MIT",
