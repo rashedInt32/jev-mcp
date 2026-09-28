@@ -1,5 +1,8 @@
 # jev-mcp
 
+[![npm version](https://img.shields.io/npm/v/jev-mcp?color=cb3837&label=npm)](https://www.npmjs.com/package/jev-mcp)
+[![npm downloads per week](https://img.shields.io/npm/dw/jev-mcp?color=2ea44f&label=downloads%2Fweek)](https://www.npmjs.com/package/jev-mcp)
+
 An MCP server that exposes [TypeSafe Jev](https://docs.typesafe.ai) as typed judgment tools.
 
 Jev is a System One model. It returns a typed answer and a calibrated probability
